@@ -213,7 +213,7 @@ class PointNetSeg(nn.Module):
         # feature transform:
         x_ = x.clone()
         T64 = self.TNet64(x_)
-        print((x_.shape, x.shape))
+
         x = torch.matmul(T64, x)
 
         x_feature = x.clone()
@@ -222,7 +222,7 @@ class PointNetSeg(nn.Module):
         x = self.mlp3(x)
         x = self.mlp4(x)
         x = self.mlp5(x)
-        
+
         x_globfeat = torch.max(x, 2, keepdim=True)[0]
 
         #  Concatenate global and local features
@@ -256,6 +256,6 @@ if __name__ == "__main__":
     print("PointNet Class", y.shape)
 
     input = torch.rand((10, 3, 500))
-    net = PointNetSeg(device, 15)
+    net = PointNetSeg(device, 50)
     x = net(input)
     print("PointNet Segm", x.shape)
