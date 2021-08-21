@@ -2,8 +2,12 @@ from torch.utils.data import Dataset, DataLoader
 import os
 import re
 import json
-import torch 
+import torch
 import numpy as np
+import random
+from matplotlib import pyplot
+from mpl_toolkits.mplot3d import Axes3D
+
 
 class ShapeNetDataset(Dataset):
     def __init__(self, data_path, N=1024, augment=False):
@@ -50,7 +54,6 @@ class ShapeNetDataset(Dataset):
                 data["class"] = self.class_map[d[1]]
                 datas.append(data)
 
-
         return datas
 
     def load_class_map(self):
@@ -77,17 +80,63 @@ class ShapeNetDataset(Dataset):
 
     def __getitem__(self, idx):
         data = self.file_list[idx]
-        points = np.loadtxt(data["points"], delimiter = " ", dtype=np.float32)
-        labels = np.loadtxt(data["label"], delimiter = " ", dtype=np.int32)
+        points = np.loadtxt(data["points"], delimiter=" ", dtype=np.float32)
+        labels = np.loadtxt(data["label"], delimiter=" ", dtype=np.int32)
         class_name = data["class"]
 
+        #  Sample subset of points:
+        samples = random.sample(range(points.shape[0]), self.N)
+        points = points[samples]
+        labels = labels[samples]
+
+        # Correct the original rotation:
+        points = correct_rotation(points)
+
+        # Augment point cloud (rotation + noise)
+        if self.augment:
+            points = apply_augmentation(points)
+
+        return points, labels, class_name
 
 
+def correct_rotation(points):
+    th = -np.pi / 2
+    c = np.cos(th)
+    s = np.sin(th)
+    Rx = np.array(([1, 0, 0], [0, c, -s], [0, s, c]))
 
-        return data
+    return np.matmul(points, Rx)
+
+
+def apply_augmentation(points):
+
+    # Get random rotation matrix around z:
+    th = random.uniform(0, 1) * 2 * np.pi
+    c = np.cos(th)
+    s = np.sin(th)
+    Rz = np.array([c, -s, 0], [s, c, 0], [0, 0, 1])
+
+    points = np.matmul(points, Rz)
+
+    # Change position of the points:
+    noise = random.uniform(0, 0.2, points.shape)
+    points += noise
+    return points
+
+
+def visualize_shape(points):
+    fig = pyplot.figure()
+    ax = Axes3D(fig)
+
+    ax.scatter(points[:, 0], points[:, 1], points[:, 2])
+    pyplot.xlabel("X axis label")
+    pyplot.ylabel("Y axis label")
+    pyplot.show()
 
 
 if __name__ == "__main__":
-    data = ShapeNetDataset("/Users/aldi/workspace/pointnet/data/")
-    data[0]
+    data = ShapeNetDataset("/Users/aldi/workspace/pointnet/data/", augment=False)
+    points, _, name = data[0]
+    print("Label:", name)
+    visualize_shape(points)
     # dataloader = DataLoader(data, batch_size=4, shuffle=True, num_workers=0)
