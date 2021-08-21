@@ -3,39 +3,79 @@ from torch import nn
 import torch.nn.functional as F
 
 
+class mlp(nn.Module):
+    def __init__(self, in_size, out_size, k_size=1, batchnorm=True):
+        """ 
+        Creates a mlp layer as described in the paper.
+
+        in_size: input size of the mlp
+        out_size: output size of the mlp
+        relu: apply relu
+        batchnorm: apply norm 
+        """
+        super(mlp, self).__init__()
+        self.batchnorm = batchnorm
+        self.conv = nn.Conv1d(in_size, out_size, k_size)
+        self.bn = nn.BatchNorm1d(out_size)
+
+    def forward(self, x):
+        if self.batchnorm:
+            return F.relu(self.bn(self.conv(x)))
+        else:
+            return self.conv(x)
+
+
+class fc(nn.Module):
+    def __init__(self, in_size, out_size, k_size=1, batchnorm=True, dropout=False, dropout_p=0.7):
+        """ 
+        Creates a fully connected layer as described in the paper.
+
+        in_size: input size of the mlp
+        out_size: output size of the mlp
+        relu: apply relu
+        batchnorm: apply norm 
+        """
+        super(fc, self).__init__()
+        self.batchnorm = batchnorm
+        self.dropout = dropout
+
+        self.fc = nn.Linear(in_size, out_size)
+        self.bn = nn.BatchNorm1d(out_size)
+        self.dp = nn.Dropout(p=dropout_p)
+
+    def forward(self, x):
+        if self.batchnorm and not self.dropout:
+            return F.relu(self.bn(self.fc(x)))
+        elif self.batchnorm and self.dropout:
+            return F.relu(self.bn(self.dp(self.fc(x))))
+        elif not self.batchnorm:
+            return self.fc(x)
+
+
 class TNet3(nn.Module):
     def __init__(self, device):
         super(TNet3, self).__init__()
 
         self.device = device
 
-        self.conv1 = nn.Conv1d(3, 64, 1)
-        self.conv2 = nn.Conv1d(64, 128, 1)
-        self.conv3 = nn.Conv1d(128, 1024, 1)
+        self.mlp1 = mlp(3, 64)
+        self.mlp2 = mlp(64, 128)
+        self.mlp3 = mlp(128, 1024)
 
-        self.bn1 = nn.BatchNorm1d(64)
-        self.bn2 = nn.BatchNorm1d(128)
-        self.bn3 = nn.BatchNorm1d(1024)
-        self.bn4 = nn.BatchNorm1d(512)
-        self.bn5 = nn.BatchNorm1d(256)
-
-        self.fc1 = nn.Linear(1024, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 9)
-
-        self.dropout = nn.Dropout(p=0.7)
+        self.fc1 = fc(1024, 512)
+        self.fc2 = fc(512, 256, dropout=True)
+        self.fc3 = fc(256, 9)
 
     def forward(self, x):
         batch_size = x.shape[0]
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
+        x = self.mlp1(x)
+        x = self.mlp2(x)
+        x = self.mlp3(x)
 
         x = torch.max(x, 2)[0]
 
-        x = F.relu(self.bn4(self.fc1(x)))
-        x = self.dropout(F.relu(self.bn5(self.fc2(x))))
-
+        x = self.fc1(x)
+        x = self.fc2(x)
         x = self.fc3(x)
 
         iden = torch.eye(3, 3).repeat(batch_size, 1, 1)
@@ -174,7 +214,7 @@ class PointNetSeg(nn.Module):
         self.mlp4 = nn.Conv1d(64, 128, 1)
         self.mlp5 = nn.Conv1d(128, 1024, 1)
 
-        # segmentation part
+        #  segmentation part
         self.mlp6 = nn.Conv1d(1088, 512, 1)
         self.mlp7 = nn.Conv1d(512, 256, 1)
         self.mlp8 = nn.Conv1d(256, 128, 1)
@@ -186,12 +226,10 @@ class PointNetSeg(nn.Module):
         self.bn4 = nn.BatchNorm1d(128)
         self.bn5 = nn.BatchNorm1d(1024)
 
-
         # segmentation part:
         self.bn6 = nn.BatchNorm1d(512)
         self.bn7 = nn.BatchNorm1d(256)
         self.bn8 = nn.BatchNorm1d(128)
-
 
         self.dropout = nn.Dropout(p=0.3)
 
@@ -220,7 +258,7 @@ class PointNetSeg(nn.Module):
 
         x_globfeat = torch.max(x, 2, keepdim=True)[0]
 
-        # Concatenate global and local features
+        #  Concatenate global and local features
         x_globfeat = x_globfeat.expand(-1, -1, x_feature.shape[2])
         x = torch.cat((x_feature, x_globfeat), dim=1)
 
@@ -229,7 +267,6 @@ class PointNetSeg(nn.Module):
         x = F.relu(self.bn8(self.mlp8(x)))
 
         x = self.mlp9(x)
-
 
         return x
 
