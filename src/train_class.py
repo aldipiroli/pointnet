@@ -11,10 +11,11 @@ from loss import PointNetLoss
 
 class Trainer:
     def __init__(self):
+        DATASET_PATH = "/content/drive/MyDrive/data/"
         DATASET_PATH = "data/"
 
         # Training Parameters:
-        self.batch_size = 2
+        self.batch_size = 16
         self.lr = 0.001
         self.n_epochs = 1000
         self.model_path = "model/model.pth"
@@ -22,6 +23,7 @@ class Trainer:
 
         # Use GPU?
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print("Training on Device: ", self.device)
 
         # ===== Dataloader =====:        
         self.dataset = ShapeNetDataset(DATASET_PATH, augment=True, split=1)
@@ -31,13 +33,13 @@ class Trainer:
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=self.batch_size, shuffle=False)
 
         #  Network:
-        self.net = PointNetClass(self.device, classes=16)
+        self.net = PointNetClass(self.device, classes=16).to(self.device)
 
         # Optimizer:
         self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr)
 
         # Loss:
-        self.loss = PointNetLoss()
+        self.loss = PointNetLoss(self.device)
 
         # Load Model?
         if self.load_model and os.path.isfile(self.model_path):
@@ -47,16 +49,16 @@ class Trainer:
     def train(self):
         for epoch in range(self.n_epochs):
             print("\n============= Epoch: %d =============\n" % epoch)
-
+            print("Len: ", len(self.dataloader))
             #  Training Loop:
             self.net.train()
             for i, (points, _, target) in enumerate(self.dataloader):
                 points = points.to(self.device)
                 target = target.to(self.device)
 
+
                 # Compute Network Output
                 pred, A = self.net(points)
-
                 # Compute Loss
                 loss = self.loss(target, pred, A)
 
@@ -65,8 +67,11 @@ class Trainer:
                 loss.backward()
                 self.optimizer.step()
 
-                if epoch % 20 == 0:
-                    print("Epoch: %d, Error Loss: %f" % (epoch, loss))
+                if i % 25 == 0:
+                    print("\nEpoch: %d, i: %d, Error Loss: %f" % (epoch, i, loss))
+                    pred_ = torch.max(pred,1)[1]
+                    print("Pred: ", pred_)
+                    print("Targ: ", target)
 
             # Validate:
             self.net.eval()
@@ -78,7 +83,7 @@ class Trainer:
                 pred, A = self.net(points)
                 loss = self.loss(target, pred, A)
                 val_loss += loss
-            print("Epoch: %d, Validation Loss: %f" % (epoch, val_loss))
+            print("Epoch: %d, i: %d, Validation Loss: %f" % (epoch, i, val_loss))
 
             # Save the model:
             torch.save(self.net.state_dict(), self.model_path)
