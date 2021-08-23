@@ -1,6 +1,7 @@
 from torch.utils.data import Dataset, DataLoader
 import torch
 import torch.optim as optim
+import os 
 
 import numpy as np
 from dataset import ShapeNetDataset
@@ -16,6 +17,8 @@ class Trainer:
         self.batch_size = 2
         self.lr = 0.001
         self.n_epochs = 1000
+        self.model_path = "model/model.pth"
+        self.load_model= True
 
         # Use GPU?
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -35,6 +38,11 @@ class Trainer:
 
         # Loss:
         self.loss = PointNetLoss()
+
+        # Load Model?
+        if self.load_model and os.path.isfile(self.model_path):
+            self.net = torch.load(self.model_path)
+            print("Loaded Path: ", self.model_path)
 
     def train(self):
         for epoch in range(self.n_epochs):
@@ -71,6 +79,10 @@ class Trainer:
                 loss = self.loss(target, pred, A)
                 val_loss += loss
             print("Epoch: %d, Validation Loss: %f" % (epoch, val_loss))
+
+            # Save the model:
+            torch.save(self.net.state_dict(), self.model_path)
+
 
     def train_overfit(self):
         self.net.train()
