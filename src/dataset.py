@@ -67,7 +67,7 @@ LABEL_IDX = {
 
 
 class ShapeNetDataset(Dataset):
-    def __init__(self, data_path, N=1024, augment=False):
+    def __init__(self, data_path, N=1024, split=1, augment=False):
         """
         N: number of points to sample out of the total shape
         """
@@ -75,9 +75,10 @@ class ShapeNetDataset(Dataset):
         assert os.path.isdir(self.data_path), ("Data Path is Not Corret: ", self.data_path)
         self.N = N
         self.augment = augment
+        self.split = split
 
         self.class_map = self.load_class_map()
-        self.file_list = self.load_files(2)
+        self.file_list = self.load_files(self.split)
 
     def load_files(self, split):
         """ 
@@ -105,14 +106,16 @@ class ShapeNetDataset(Dataset):
                 points_ = os.path.join(self.data_path, d[0], d[1], "points", d[2] + ".pts")
                 label_ = os.path.join(self.data_path, d[0], d[1], "points_label", d[2] + ".seg")
 
+                # Check if shape has enough points: 
                 assert os.path.isfile(points_), ("Points file does not exist: ", points_)
                 assert os.path.isfile(label_), ("Label file does not exist: ", label_)
                 data["points"] = points_
                 data["label"] = label_
                 data["class"] = self.class_map[d[1]]
                 data["folder"] = d[1]
-                datas.append(data)
 
+                datas.append(data)
+                
         return datas
 
     def load_class_map(self):
@@ -143,10 +146,12 @@ class ShapeNetDataset(Dataset):
         labels = np.loadtxt(data["label"], delimiter=" ", dtype=np.int32)
         class_name = data["class"]
 
+
         #  Sample subset of points:
-        samples = random.sample(range(points.shape[0]), self.N)
-        points = points[samples]
-        labels = labels[samples]
+        if points.shape[0] >= self.N:
+            samples = random.sample(range(points.shape[0]), self.N)
+            points = points[samples]
+            labels = labels[samples]
 
         #  Correct the label offset:
         folder = data["folder"]
@@ -155,8 +160,6 @@ class ShapeNetDataset(Dataset):
 
         #  Correct the original rotation:
         points = correct_rotation(points)
-
-
 
         # Augment point cloud (rotation + noise)
         if self.augment:
@@ -169,7 +172,12 @@ class ShapeNetDataset(Dataset):
 
         class_id = np.array(LABEL_IDX[class_name])
         class_id = torch.from_numpy(class_id)
-        # points = points.to(torch.DoubleTensor)
+
+        # Hack, should find a way to skip it during the return 
+        if points.shape[1] < self.N:
+            points = torch.rand((3, self.N))
+            labels = torch.rand((self.N))
+
         return points, labels, class_id
 
 
