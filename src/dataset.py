@@ -46,6 +46,25 @@ LABEL_OFFSETS = {
     "04379243": 47,
 }
 
+LABEL_IDX = {
+    "Airplane": 0,
+    "Bag": 1,
+    "Cap": 2,
+    "Car": 3,
+    "Chair": 4,
+    "Earphone": 5,
+    "Guitar": 6,
+    "Knife": 7,
+    "Lamp": 8,
+    "Laptop": 9,
+    "Motorbike": 10,
+    "Mug": 11,
+    "Pistol": 12,
+    "Rocket": 13,
+    "Skateboard": 14,
+    "Table": 15,
+}
+
 
 class ShapeNetDataset(Dataset):
     def __init__(self, data_path, N=1024, augment=False):
@@ -72,6 +91,7 @@ class ShapeNetDataset(Dataset):
             "shuffled_train_file_list.json",
             "shuffled_val_file_list.json",
         ]
+
         path = os.path.join(self.data_path, "shape_data", "train_test_split", split_name[split])
         assert os.path.isfile(path), ("Path does not exist", path)
 
@@ -139,9 +159,8 @@ class ShapeNetDataset(Dataset):
         # Augment point cloud (rotation + noise)
         if self.augment:
             points = apply_augmentation(points)
-        
-        print(labels)
-        return points, labels, class_name
+
+        return points, labels, LABEL_IDX[class_name]
 
 
 def correct_rotation(points):
@@ -180,7 +199,7 @@ def visualize_shape(points):
 
 if __name__ == "__main__":
     data = ShapeNetDataset("/Users/aldi/workspace/pointnet/data/", augment=False)
-    points, _, name = data[120]
-    print("Label:", name)
-    # visualize_shape(points)
-    # dataloader = DataLoader(data, batch_size=4, shuffle=True, num_workers=0)
+    points, labels, name = data[34]
+    print("points:", points)
+    print("labels:", labels)
+    print("name:", name)
