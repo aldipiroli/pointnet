@@ -10,20 +10,26 @@ class PointNetLoss(nn.Module):
 
     def forward(self, gt, pr, A):
         #  Orthogonality constraint
-        orth = torch.norm(torch.eye(A.shape[0]) - torch.matmul(A, A.transpose(0, 1)))
+        orth = torch.norm(torch.eye(A.shape[1]) - torch.matmul(A, A.transpose(1, 2)))
 
-        return self.nll_loss(pr, gt) + self.w * orth
+        return self.nll_loss(pr, gt)  + self.w * orth
 
 
 if __name__ == "__main__":
-    batch_size = 10
+    batch_size = 5
     classes = 15
 
-    pr = torch.randn(batch_size, classes, requires_grad=True)
-    gt = torch.empty(batch_size, dtype=torch.long).random_(classes)
-    A = torch.rand(64, 64)
+    pred = torch.randn(batch_size, classes, requires_grad=True)
+    target = torch.empty(batch_size, dtype=torch.long).random_(classes)
+    A = torch.rand(batch_size, 64, 64)
+
+    print("pred.shape: ",pred.shape, "target.shape: ",target.shape, "A.shape", A.shape)
+    # pred.shape:  torch.Size([5, 15]) 
+    # target.shape:  torch.Size([5]) 
+    # A.shape torch.Size([5, 64, 64])
+
 
     loss = PointNetLoss()
-    output = loss(gt, pr, A)
+    output = loss(target, pred, A)
 
     print(output)

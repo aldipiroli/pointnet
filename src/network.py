@@ -127,13 +127,13 @@ class TNet64(nn.Module):
 
 
 class PointNetClass(nn.Module):
-    def __init__(self, device, k=10):
+    def __init__(self, device, classes=10):
         """
         k: number of classes which a the input (shape) can be classified into
         """
         super(PointNetClass, self).__init__()
         self.device = device
-        self.k = k
+        self.classes = classes
 
         self.TNet3 = TNet3(self.device)
         self.TNet64 = TNet64(self.device)
@@ -145,7 +145,7 @@ class PointNetClass(nn.Module):
 
         self.mlp5 = mlp(1024, 512)
         self.mlp6 = mlp(512, 256)
-        self.mlp7 = mlp(256, self.k, batchnorm=False)
+        self.mlp7 = mlp(256, self.classes, batchnorm=False)
 
     def forward(self, x):
         #  input transform:
@@ -160,7 +160,6 @@ class PointNetClass(nn.Module):
         # feature transform:
         x_ = x.clone()
         T64 = self.TNet64(x_)
-        print((x_.shape, x.shape))
         x = torch.matmul(T64, x)
 
         #  mlp (64,128,1024):
@@ -173,7 +172,7 @@ class PointNetClass(nn.Module):
         x = self.mlp6(x)
         x = self.mlp7(x)
 
-        return x.squeeze()
+        return x.squeeze(), T64
 
 
 class PointNetSeg(nn.Module):

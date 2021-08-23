@@ -156,11 +156,21 @@ class ShapeNetDataset(Dataset):
         #  Correct the original rotation:
         points = correct_rotation(points)
 
+
+
         # Augment point cloud (rotation + noise)
         if self.augment:
             points = apply_augmentation(points)
+        
+        # Correct points shape and type
+        points = points.transpose(1,0)
+        points = torch.from_numpy(points)
+        labels = torch.from_numpy(labels)
 
-        return points, labels, LABEL_IDX[class_name]
+        class_id = np.array(LABEL_IDX[class_name])
+        class_id = torch.from_numpy(class_id)
+        # points = points.to(torch.DoubleTensor)
+        return points, labels, class_id
 
 
 def correct_rotation(points):
@@ -177,13 +187,15 @@ def apply_augmentation(points):
     th = random.uniform(0, 1) * 2 * np.pi
     c = np.cos(th)
     s = np.sin(th)
-    Rz = np.array([c, -s, 0], [s, c, 0], [0, 0, 1])
+    Rz = np.array(([c, -s, 0], [s, c, 0], [0, 0, 1]))
 
     points = np.matmul(points, Rz)
 
     # Change position of the points:
-    noise = random.uniform(0, 0.2, points.shape)
+    noise = np.random.uniform(0, 0.2, size=points.shape)
     points += noise
+
+    points =points.astype(np.float32)
     return points
 
 
