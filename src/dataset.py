@@ -8,6 +8,44 @@ import random
 from matplotlib import pyplot
 from mpl_toolkits.mplot3d import Axes3D
 
+SHAPE_NPARTS = {
+    "02691156": 4,
+    "02773838": 2,
+    "02954340": 2,
+    "02958343": 4,
+    "03001627": 4,
+    "03261776": 3,
+    "03467517": 3,
+    "03624134": 2,
+    "03636649": 4,
+    "03642806": 2,
+    "03790512": 6,
+    "03797390": 2,
+    "03948459": 3,
+    "04099429": 3,
+    "04225987": 3,
+    "04379243": 3,
+}
+
+LABEL_OFFSETS = {
+    "02691156": 0,
+    "02773838": 4,
+    "02954340": 6,
+    "02958343": 8,
+    "03001627": 12,
+    "03261776": 16,
+    "03467517": 19,
+    "03624134": 22,
+    "03636649": 24,
+    "03642806": 28,
+    "03790512": 30,
+    "03797390": 36,
+    "03948459": 38,
+    "04099429": 41,
+    "04225987": 44,
+    "04379243": 47,
+}
+
 
 class ShapeNetDataset(Dataset):
     def __init__(self, data_path, N=1024, augment=False):
@@ -52,6 +90,7 @@ class ShapeNetDataset(Dataset):
                 data["points"] = points_
                 data["label"] = label_
                 data["class"] = self.class_map[d[1]]
+                data["folder"] = d[1]
                 datas.append(data)
 
         return datas
@@ -89,13 +128,19 @@ class ShapeNetDataset(Dataset):
         points = points[samples]
         labels = labels[samples]
 
-        # Correct the original rotation:
+        #  Correct the label offset:
+        folder = data["folder"]
+        offset = LABEL_OFFSETS[folder]
+        labels = (labels - 1) + offset
+
+        #  Correct the original rotation:
         points = correct_rotation(points)
 
         # Augment point cloud (rotation + noise)
         if self.augment:
             points = apply_augmentation(points)
-
+        
+        print(labels)
         return points, labels, class_name
 
 
@@ -109,7 +154,6 @@ def correct_rotation(points):
 
 
 def apply_augmentation(points):
-
     # Get random rotation matrix around z:
     th = random.uniform(0, 1) * 2 * np.pi
     c = np.cos(th)
@@ -136,7 +180,7 @@ def visualize_shape(points):
 
 if __name__ == "__main__":
     data = ShapeNetDataset("/Users/aldi/workspace/pointnet/data/", augment=False)
-    points, _, name = data[0]
+    points, _, name = data[120]
     print("Label:", name)
-    visualize_shape(points)
+    # visualize_shape(points)
     # dataloader = DataLoader(data, batch_size=4, shuffle=True, num_workers=0)
