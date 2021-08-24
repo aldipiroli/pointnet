@@ -15,7 +15,7 @@ class Trainer:
         DATASET_PATH = "data/"
 
         # Training Parameters:
-        self.batch_size = 16
+        self.batch_size = 10
         self.lr = 0.001
         self.n_epochs = 1000
         self.model_path = "model/model.pth"
@@ -47,6 +47,7 @@ class Trainer:
             print("Loaded Path: ", self.model_path)
 
     def train(self):
+        print("Heyyy")
         for epoch in range(self.n_epochs):
             print("\n============= Epoch: %d =============\n" % epoch)
             print("Len: ", len(self.dataloader))
@@ -72,6 +73,9 @@ class Trainer:
                     pred_ = torch.max(pred,1)[1]
                     print("Pred: ", pred_)
                     print("Targ: ", target)
+            
+            # Save the model:
+            torch.save(self.net.state_dict(), self.model_path)
 
             # Validate:
             self.net.eval()
@@ -83,10 +87,9 @@ class Trainer:
                 pred, A = self.net(points)
                 loss = self.loss(target, pred, A)
                 val_loss += loss
-            print("Epoch: %d, i: %d, Validation Loss: %f" % (epoch, i, val_loss))
+                if i % 25 == 0:
+                    print("Epoch: %d, i: %d, Validation Loss: %f" % (epoch, i, val_loss))
 
-            # Save the model:
-            torch.save(self.net.state_dict(), self.model_path)
 
 
     def train_overfit(self):
