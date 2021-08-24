@@ -18,7 +18,7 @@ class Trainer:
         self.batch_size = 10
         self.lr = 0.001
         self.n_epochs = 1000
-        self.model_path = "model/model.pth"
+        self.model_path = "model/model_class.pth"
         self.load_model= True
 
         # Use GPU?
@@ -88,36 +88,6 @@ class Trainer:
                 val_loss += loss
                 if i % 25 == 0:
                     print("Epoch: %d, i: %d, Validation Loss: %f" % (epoch, i, val_loss))
-
-
-
-    def train_overfit(self):
-        self.net.train()
-        points, _, target = next(iter(self.dataloader))
-
-        for epoch in range(self.n_epochs):
-            print("\n============= Epoch: %d =============\n" % epoch)
-
-            # Compute Network Output
-            pred, A = self.net(points)
-
-            # Compute Loss
-            loss = self.loss(target, pred, A)
-
-            # Optimize:
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
-            #  Compute readable pred:
-            pred_ = torch.max(pred, dim=1)
-
-            if epoch % 20 == 0:
-                print("loss: ", loss)
-                print("target: ", target)
-                print("pred: ", pred)
-                print("pred_: ", pred_)
-                input("..")
 
 
 if __name__ == "__main__":

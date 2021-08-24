@@ -19,7 +19,7 @@ class Trainer:
         self.batch_size = 2
         self.lr = 0.001
         self.n_epochs = 1000
-        self.model_path = "model/model.pth"
+        self.model_path = "model/model_segm.pth"
         self.load_model= False
         self.compute_validation = False
 
