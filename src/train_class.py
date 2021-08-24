@@ -47,10 +47,8 @@ class Trainer:
             print("Loaded Path: ", self.model_path)
 
     def train(self):
-        print("Heyyy")
+        print("Training Classification PointNet!")
         for epoch in range(self.n_epochs):
-            print("\n============= Epoch: %d =============\n" % epoch)
-            print("Len: ", len(self.dataloader))
             #  Training Loop:
             self.net.train()
             for i, (points, _, target) in enumerate(self.dataloader):
@@ -69,7 +67,8 @@ class Trainer:
                 self.optimizer.step()
 
                 if i % 25 == 0:
-                    print("\nEpoch: %d, i: %d, Error Loss: %f" % (epoch, i, loss))
+                    print("="*50)
+                    print("Epoch: %d, i: %d, Error Loss: %f" % (epoch, i, loss))
                     pred_ = torch.max(pred,1)[1]
                     print("Pred: ", pred_)
                     print("Targ: ", target)

@@ -169,6 +169,7 @@ class ShapeNetDataset(Dataset):
         points = points.transpose(1,0)
         points = torch.from_numpy(points)
         labels = torch.from_numpy(labels)
+        labels = labels.type(torch.LongTensor)
 
         class_id = np.array(LABEL_IDX[class_name])
         class_id = torch.from_numpy(class_id)
@@ -177,6 +178,7 @@ class ShapeNetDataset(Dataset):
         if points.shape[1] < self.N:
             points = torch.rand((3, self.N))
             labels = torch.rand((self.N))
+            labels = labels.type(torch.LongTensor)
 
         return points, labels, class_id
 

@@ -233,7 +233,7 @@ class PointNetSeg(nn.Module):
         x = self.mlp8(x)
         x = self.mlp9(x)
 
-        return x
+        return x, T64
 
 
 if __name__ == "__main__":
