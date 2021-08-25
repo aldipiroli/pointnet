@@ -1,2 +1,2 @@
 # pointnet
-PointNet pytorch from scratch implementation 
+Implementing from scratch PointNet
