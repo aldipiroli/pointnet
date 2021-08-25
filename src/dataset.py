@@ -70,6 +70,9 @@ class ShapeNetDataset(Dataset):
     def __init__(self, data_path, N=1024, split=1, augment=False):
         """
         N: number of points to sample out of the total shape
+        split 0: test
+        split 1: train
+        split 2: val
         """
         self.data_path = data_path
         assert os.path.isdir(self.data_path), ("Data Path is Not Corret: ", self.data_path)

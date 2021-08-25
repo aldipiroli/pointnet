@@ -89,7 +89,6 @@ class Trainer:
                 if i % 25 == 0:
                     print("Epoch: %d, i: %d, Validation Loss: %f" % (epoch, i, val_loss))
 
-
 if __name__ == "__main__":
     trainer = Trainer()
     trainer.train()

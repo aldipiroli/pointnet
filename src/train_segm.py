@@ -12,8 +12,8 @@ from loss import PointNetLoss
 
 class Trainer:
     def __init__(self):
-        DATASET_PATH = "/content/drive/MyDrive/data/"
-        DATASET_PATH = "data/"
+        self.DATASET_PATH = "/content/drive/MyDrive/data/"
+        self.DATASET_PATH = "data/"
 
         # Training Parameters:
         self.batch_size = 2
@@ -28,10 +28,10 @@ class Trainer:
         print("Training on Device: ", self.device)
 
         # ===== Dataloader =====:        
-        self.dataset = ShapeNetDataset(DATASET_PATH, augment=True, split=1)
+        self.dataset = ShapeNetDataset(self.DATASET_PATH, augment=True, split=1)
         self.dataloader = DataLoader(self.dataset, batch_size=self.batch_size, shuffle=False)
 
-        self.dataset_val = ShapeNetDataset(DATASET_PATH, augment=True, split=2)
+        self.dataset_val = ShapeNetDataset(self.DATASET_PATH, augment=True, split=2)
         self.dataloader_val = DataLoader(self.dataset_val, batch_size=self.batch_size, shuffle=False)
 
         #  Network:
@@ -52,8 +52,6 @@ class Trainer:
         print("Training Segmentation PointNet!")
         points, target, _ = next(iter(self.dataloader))
         i = 1
-        print("-->", points.shape)
-        print("-->", target.shape)
 
         for epoch in range(self.n_epochs):
             #  Training Loop:
@@ -96,7 +94,25 @@ class Trainer:
                     val_loss += loss
                     if i % 25 == 0:
                         print("Epoch: %d, i: %d, Validation Loss: %f" % (epoch, i, val_loss))
+    def mIoU(self):
+        dataset = ShapeNetDataset(self.DATASET_PATH, augment=True, split=0)
+        dataloader = DataLoader(self.dataset_val, batch_size=2, shuffle=False)
+
+        for i, (points, target, _) in enumerate(dataloader):
+            points = points.to(self.device)
+            target = target.to(self.device)
+
+            pred, _ = self.net(points)
+
+            # Find arg max of prediction:
+            max_ = torch.max(pred,1)[1]
+
+            print("Pred: ", pred.shape)
+            print("Max: ", max_.shape)
+            print("Target: ", target.shape)
+            input("...")
 
 if __name__ == "__main__":
     trainer = Trainer()
-    trainer.train()
+    # trainer.train()
+    trainer.mIoU()
